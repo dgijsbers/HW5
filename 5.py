@@ -59,24 +59,68 @@ import twitter_info
 #each of these with variables rather than filling in the empty strings 
 #if you choose to do the secure way for 50 EC points
 
-#consumer_key = "" 
-#consumer_secret = ""
-#access_token = ""
-#access_token_secret = ""
-consumer_key = "Y4dk7WM5rTG6PcGQDkHwJD6cj"
-consumer_secret = "ipIE5Zvgkw4Lu3MXGCWXEOLxCtfc3WTABE9ObbJy98lu3zCKCY"
-access_token = "375393706-iqPdD8gjsTQdErofRDhX0oTpRMOQpUL7ZVhEAXCm"
-access_token_secret = "dxr5XRfQHD4sO65CO1lRROb06wQxhoOEYYtmS5uaw7Zla"
-## Set up your authentication to Twitter
+consumer_key = twitter_info.consumer_key
+consumer_secret = twitter_info.consumer_secret
+access_token = twitter_info.access_token
+access_token_secret = twitter_info.access_token_secret
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
+## Set up your authentication to Twitter
 api = tweepy.API(auth, parser=tweepy.parsers.JSONParser()) # Set up library to 
 #grab stuff from twitter with your authentication, and return it in a 
 #JSON-formatted way
 
 ## Write the rest of your code here!
 
-base_url = 'https://apps.twitter.com/'
+
+CACHE_FNAME = "cached_data_socialmedia.json"
+try:
+	cache_file = open(CACHE_FNAME,'r')
+	cache_contents = cache_file.read()
+	CACHE_DICTION = json.loads(cache_contents)
+except:
+	CACHE_DICTION = {}
+
+def get_tweets_from_user(username):
+	unique_identifier = "twitter_{}".format(username) 
+	if unique_identifier in CACHE_DICTION:
+		print('using cached data for', username)
+		twitter_results = CACHE_DICTION[unique_identifier] # grab the data from the cache!
+	else:
+		print('getting data from internet for', username)
+		twitter_results = api.user_timeline(username) 
+#		
+		CACHE_DICTION[unique_identifier] = twitter_results # add it to the dictionary -- new key-val pair
+		# and then write the whole cache dictionary, now with new info added, to the file, so it'll be there even after your program closes!
+		f = open(CACHE_FNAME,'w') # open the cache file for writing
+		f.write(json.dumps(CACHE_DICTION)) # make the whole dictionary holding data and unique identifiers into a json-formatted string, and write that wholllle string to a file so you'll have it next time!
+		f.close()
+
+	# now no matter what, you have what you need in the twitter_results variable still, go back to what we were doing!
+	tweet_texts = [] # collect 'em all!
+	for tweet in twitter_results:
+		tweet_texts.append(tweet["text"])
+		print (tweet_texts)
+	return tweet_texts[:3]
+
+a = input("\nType a phrase that you would like to search:\n")
+
+
+api = tweepy.API(auth, parser=tweepy.parsers.JSONParser())
+
+public_tweets = api.home_timeline()
+
+results = api.search(q=a)
+
+
+list_tweets = results["statuses"][:3]
+
+for tweet in list_tweets:
+	#return tweet["text"]
+	#return tweet["created_at"]
+	print(tweet["text"])
+	print(tweet["created_at"])
+	print("\n")
 #### Recommended order of tasks: ####
 ## 1. Set up the caching pattern start -- the dictionary and the try/except
 # statement shown in class.
